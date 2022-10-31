@@ -5,7 +5,6 @@ using namespace std;
 Server::Server(vector<vector<string> > settings, vector<vector<string> > routes, vector<vector<string> > dir, WebServ *web)
 : w(web), error_path(web->root + "errors/"), max_body_size(0), root(web->cwd + "/HTML/")  {
     string tmp[] = {"listen" ,"server_name"};//this could mandatory ones
-    cout << "new server " << endl;
     vector <string> params(tmp, tmp + 2);//
     for (size_t i = 0; i < settings.size(); i++) {
         if (settings[i][0] == "listen") {
@@ -27,11 +26,19 @@ Server::Server(vector<vector<string> > settings, vector<vector<string> > routes,
         if (v != params.end())
             params.erase(v);//
     }
-    if (!params.empty()) throw invalid_argument("config doesnt have required declarations");
+    if (find(params.begin(), params.end(), "server_name") != params.end())
+        names.push_back("");
+    else if (!params.empty() ) throw invalid_argument("config doesn't have required declarations");
+    
     for (size_t i = 0; i < routes.size(); i++) 
         route_methods.insert(make_pair(routes[i][0], vector<string>(routes[i].begin() + 1, routes[i].end())));
     for (size_t i = 0; i < dir.size(); i++)
         dirs.insert(make_pair(dir[i][0] , dir[i][1]));
+    cout << "new server :{";
+        cout << names[0];  
+    for (size_t i = 1; i < names.size(); i++)
+        cout  << ", " << names[i];
+    cout << "} ";  
     for (size_t i = 0; i < ports.size(); i++)
         sockets.push_back(Socket(ports[i]));
 

@@ -32,6 +32,9 @@
 # include <map>
 #include <set>
 #include <dirent.h>
+#ifdef __linux__
+# include <wait.h>
+#endif
 //~~~~~~~~~~~~~~~~~~~~//
 /*• Le premier serveur pour un host:port sera le serveur par défaut pour cet host:port
 (ce qui signifie qu’il répondra à toutes les requêtes qui n’appartiennent pas à un
@@ -62,7 +65,7 @@ public:
     ~WebServ();
     void run();
     // vector<Response> rep_by_host(WebServ *w);
-    Server *get_host(string name, int port);
+    Server *get_host(string name);
     //stupid
     void init(char **env);
     char * const *env;

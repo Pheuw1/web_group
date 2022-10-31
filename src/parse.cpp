@@ -34,9 +34,9 @@ vector<string> get_all_scopes(string file, string directive, string open, string
     string scope;
     vector<string> res;
     for (size_t i = 0; (i = file.find(directive, end)) != string::npos;){
-        if ((i = file.find_first_of(open, i)) == string::npos) throw invalid_argument("asd"); 
+        if ((i = file.find_first_of(open, i)) == string::npos) throw invalid_argument("couldn't open scope"); 
         i = file.find_first_not_of("     \n", i); 
-        if (!file[i + 1] && (i == string::npos || file[i] != open[0])) {throw invalid_argument("couldn't find scope");}
+        if (!file[i + 1] && (i == string::npos || file[i] != open[0])) {throw invalid_argument("couldn't close scope");}
         start = i + 1;
         if ((end = file.find(close, start)) == string::npos) {throw invalid_argument("scope didn't end");}
         if ((scope = file.substr(start, end - 1 - start)).find_first_of(open + close) != string::npos) {throw invalid_argument("");}

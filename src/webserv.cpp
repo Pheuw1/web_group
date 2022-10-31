@@ -53,15 +53,16 @@ WebServ::WebServ(string config_path, char **env) {
       }
 }
 
-Server *WebServ::get_host(string name, int port) {
-      for (IT it = servers.begin(); it  !=servers.end(); it++)
-            for (Names names = it->names.begin(); names != it->names.end(); names++)
-                  if (name == *names)
-                        return (&(*it));
+Server *WebServ::get_host(string host) {
+      vector<string> tmp= split_set(host,":");
+      string name = tmp[0]; int port = atoi(tmp[1].data());
+      if (name == "localhost") name = "";
       for (IT it = servers.begin(); it  !=servers.end(); it++)
             for (Server::IT s = it->sockets.begin(); s !=  it->sockets.end();s++)
                   if (s->port == port)
-                        return (&(*it));
+                        for (Names names = it->names.begin(); names != it->names.end(); names++)
+                              if (name == "" || name == *names)
+                                    return (&(*it));
       return (NULL);
 }
 

@@ -3,7 +3,7 @@ typedef std::map<std::string, std::vector<std::string> >::iterator M;
 Response::Response(const Request &req): w(req.w),version(req.version), status(0), description(""),headers(""), body("") ,req_cp(req) {
     M m;
     int ret;
-	std::cout << "~;:"  + req.url << std::endl;
+	// std::cout << "~"  + req.url << std::endl;
     if (req.url.find("autoindex") != string::npos)
 		ret = autoindex(w.root + req.url.substr(0, req.url.find_last_of("/") + 1), *this);
     else if (((m = req.host->route_methods.find(req.url))!= req.host->route_methods.end() 
@@ -11,8 +11,8 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
         ret = 405;
     else if (w.Methods.find(req.method_name) == w.Methods.end())
         ret = 400;
-	else
-        ret = (w.Methods[req.method_name])(req_cp, *this);
+	else{
+        ret = (w.Methods[req.method_name])(req_cp, *this);}
     buffer << req.version << " " << ret << " " << w.HttpStatusCode[ret] << "\r\n";
     if (ret < 400) { //body gets set by method
         headers += "Content-length: " + to_string(body.str().size()) + "\n";
@@ -45,8 +45,8 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
     method_name = elems[0];url = elems[1];version = elems[2];
     header = file.substr(file.find("\r\n") + 1,file.find("\r\n\r\n"));
     body = file.substr(file.find("\r\n\r\n"));
-    host = w.get_host(get_val("Host")[0], port);
-    std::cout << "asd :" + url << std::endl;
+    host = w.get_host(get_val("Host")[0]);
+    cout << "host : " << host->names[0] << endl;
 	if (url.find_last_of("/") == url.size() - 1) {
         for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) {
             if (i->first == url && i->second == "autoindex")
@@ -68,7 +68,7 @@ vector<string> Request::get_val(string key) {//to get host
     if (start != string::npos)
         start = header.find_first_of(":", start);
     if (header.find_first_not_of(": ", start) != string::npos && header.find_first_of("\n", start) != string::npos)
-        content = header.substr(header.find_first_not_of(":", start)  ,header.find_first_of("\n",start) - header.find_first_not_of(": ", start));
+        content = header.substr(header.find_first_not_of(": ", start)  ,header.find_first_of("\n",start) - header.find_first_not_of(": ", start));
     return split_set(content, ";");
 }
 
@@ -80,6 +80,7 @@ int GET(Request &req, Response &rep) {
         return CGI(req, rep);
     ifstream file_stream;
     file_stream.open(req.url.data());
+
     if (file_stream.fail()) 
         return(404);
     std::string file((istreambuf_iterator<char>(file_stream)), istreambuf_iterator<char>());
@@ -156,17 +157,22 @@ int CGI(Request &req, Response &rep) {
 int autoindex(string url, Response &rep) {
     DIR 			* dir; 
 	struct dirent *diread;
-    vector<char *> files;
+    vector<string> files;
 
     if ((dir = opendir(url.data())) != NULL) {
         while ((diread = readdir(dir)) != NULL)
-            files.push_back(diread->d_name);
+            files.push_back( string(diread->d_name));
         closedir (dir);
     } else {return 404;}
 	rep.body << "<!doctype html>\n<html>\n<head>\n<title>";
-	rep.body <<	url + "</title>\n</head>\n<body>\n";
+	rep.body <<	url + "</title>\n" + url + "</head>\n<body>\n";
 	for (size_t i = 0; i < files.size(); i++) {
-		rep.body << "<p> <a href=" + string(files[i]) + ">" + string(files[i]) + "</a> </p>\n";
+        string ref;
+        ref =  files[i] + (dir_exist(string(rep.w.root + "/"+ files[i]).data()) ? "/" : "");
+        if (files[i] !=  "." && files[i]  != "..")
+            ref = files[i] + (dir_exist(string(rep.w.root + "/"+ files[i]).data()) ? "/" : "");
+        std::cout << "ref :" << ref <<std::endl;
+        rep.body << "<p> <a href=" + ref + ">" + files[i]  + (dir_exist(files[i].data()) ? "/" : "") + "</a> </p>\n";
 		rep.body << "</body>\n</html>\n";
 	}	
 	return (200);	
