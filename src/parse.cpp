@@ -2,19 +2,22 @@
 typedef vector<string>::iterator IT;
 typedef vector<vector<string> >::iterator IT_2;
 
-vector<string> split_str(std::string s, std::string delimiter) {
+vector<string> split_str(string s, string delimiter) {
     size_t pos_start = 0, pos_end, delim_len = delimiter.length();
-    std::string token;
+    string token;
     vector<string> res;
 
-    while ((pos_end = s.find(delimiter, pos_start)) != string::npos) {
+    while ((pos_end = s.find (delimiter, pos_start)) != string::npos) {
         token = s.substr (pos_start, pos_end - pos_start);
         pos_start = pos_end + delim_len;
         res.push_back (token);
     }
+
     res.push_back (s.substr (pos_start));
+;
     return res;
 }
+
 
 vector<string> split_set(std::string s, std::string delimiter) {
     vector<string> ret;
@@ -108,8 +111,13 @@ vector<vector<string> > parse_scope(string &scope, WebServ &w) {
 
 
 bool dir_exist(const char *s) {
-  struct stat buffer;
-  return (stat (s, &buffer) == 0);
+    struct stat info;
+    if(stat( s, &info ) != 0)
+        return 0;
+    else if(info.st_mode & S_IFDIR)
+        return 1;
+    else
+        return 0;
 }
 
 bool replace(std::string& str, const std::string& from, const std::string& to) {

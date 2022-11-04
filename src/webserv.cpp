@@ -1,9 +1,15 @@
 #include "webserv.hpp"
 #include "server.hpp"
-
+#include <signal.h>
 typedef vector<Server>::iterator IT;
 typedef vector<string>::iterator Names;
 typedef vector<Response>::iterator Rep;
+
+void quit(int signum) {
+      (void) signum;
+      cout << "Shutting down ..." << endl;
+      running = false;
+}
 
 WebServ::~WebServ() {;}
 
@@ -51,6 +57,24 @@ WebServ::WebServ(string config_path, char **env) {
             routes.clear();
             dirs.clear();
       }
+      //checking servers
+      for (IT server = servers.begin(); server != servers.end(); server++) {
+            for (size_t i = 0; i < server->ports.size(); i++)
+                  for (size_t j = 0; j < server->ports.size(); j++)
+                        if (i != j && server->ports[i] == server->ports[j])
+                              throw invalid_argument("two ports match on same server");
+            for (IT server2 = servers.begin(); server2 != servers.end(); server2++) {
+                  if (server != server2) {
+                        for (size_t i = 0; i < server->ports.size(); i++)
+                              for (size_t j = 0; j < server2->ports.size(); j++)
+                                    if (server->ports[i] == server2->ports[i])
+                                          for (Names n = server->names.begin(); n != server->names.end(); n++)
+                                                for (Names n2 = server2->names.begin(); n2 != server2->names.end(); n2++)
+                                                     if (*n == *n2)
+                                                             throw invalid_argument("two servers with matching ports have the same name");
+                  }
+            }
+      }
 }
 
 Server *WebServ::get_host(string host) {
@@ -67,15 +91,20 @@ Server *WebServ::get_host(string host) {
 }
 
 void WebServ::run() {
-      while (true) {
-            requests.clear();
+      while (running) {
             max_sd = 0; FD_ZERO(&readfds); FD_ZERO(&writefds);   
+            cout << "check" <<endl;
             for (IT it = servers.begin(); it  !=servers.end(); it++)
                   max_sd = max(it->check_ready(readfds, writefds), max_sd);
+            
+            cout << "select" <<endl;
             if (select(max_sd + 1, &readfds ,&writefds , NULL , NULL) <0)
                   throw Socket::connect_except();
+            cout << "get" <<endl;
+            
             for (std::vector<Server>::iterator it = servers.begin(); it  !=servers.end(); it++)//responses are set now
                   it->get_requests(readfds, writefds, this);
+            cout << "send" <<endl;
             for (Rep it = responses.begin(); it != responses.end(); it++){
                   if (FD_ISSET(it->req_cp.sd , &writefds)){
                         if (send(it->req_cp.sd, it->buffer.str().data(), it->buffer.str().size(), 0) <= 0)
@@ -95,6 +124,7 @@ void WebServ::init(char **e) {
       root = "www"; 
       home = "HTML/home.html";
       error_path = "errors/";
+      running = true;
       Methods.insert(make_pair("GET",    &GET));
       Methods.insert(make_pair("POST",   &POST));
       Methods.insert(make_pair("DELETE", &DELETE));
@@ -120,6 +150,7 @@ void WebServ::init(char **e) {
       HttpStatusCode.insert(make_pair(404 ,"NotFound"));
       HttpStatusCode.insert(make_pair(405 ,"MethodNotAllowed"));
       HttpStatusCode.insert(make_pair(408 ,"RequestTimeout"));
+      HttpStatusCode.insert(make_pair(413 ,"Request Entity Too Large"));
       HttpStatusCode.insert(make_pair(418 ,"ImATeapot"));
       HttpStatusCode.insert(make_pair(500 ,"InternalServerError"));
       HttpStatusCode.insert(make_pair(501 ,"NotImplemented"));
@@ -127,4 +158,5 @@ void WebServ::init(char **e) {
       HttpStatusCode.insert(make_pair(503 ,"ServiceUnvailable"));
       HttpStatusCode.insert(make_pair(504 ,"GatewayTimeout"));
       HttpStatusCode.insert(make_pair(505 ,"HttpVersionNotSupported"));
+      signal(SIGINT, quit);
 }

@@ -15,9 +15,11 @@ public:
     int     sd;
     string obuff;
     int     port;
+    string bound;
     Request(char *buffer, WebServ *web, int sd, int port);
     ~Request(); 
     vector <string> get_val(string key);
+    vector <string> get_val(string, string key);
     Request &operator=(const Request &req) {
         w = req.w;
         version = req.version;
@@ -27,6 +29,8 @@ public:
         body = req.body;
         host = req.host;
         sd = req.sd;
+        port = req.port;
+        bound = req.bound;
         return *this;
     }
 };

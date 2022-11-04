@@ -15,7 +15,7 @@ public:
     int             master_socket;
     int             port;
     Socket(int port) ;
-    ~Socket() {for (vector<int>::iterator i = c_sd.begin(); i != c_sd.end(); i++) close(*i);}
+    ~Socket() {};
     int     check_ready(fd_set &readfds, fd_set &writefds);//returns max_fd for select // not necessary for epoll?
     void    new_connection(fd_set &readfds, fd_set &writefds) ;
     int     messages(fd_set &readfds, WebServ *w);

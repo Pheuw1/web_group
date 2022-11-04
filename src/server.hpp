@@ -9,11 +9,11 @@ class Server
 {
 private:
     // int             c_max_size;
-    vector<int>     ports;
     vector<vector<string> > settings;
     //
 
 public:
+    vector<int>     ports;
     vector<Socket>  sockets;
     ~Server();
     typedef vector<Socket>::iterator IT;
@@ -29,4 +29,5 @@ public:
     int check_ready(fd_set &readfds, fd_set &writefds);
     int get_requests(fd_set &readfds, fd_set &writefds, WebServ *w);
     int serve_response(Response &rep, fd_set &writefds, WebServ *w);
+    Server(const Server &);
 };

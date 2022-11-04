@@ -1,11 +1,10 @@
 #pragma once
 #define MAX_CONNECTION 128
 #define TIMEOUT 5000
-#define BUFF_SIZE 4096
+#define BUFF_SIZE 20000
 #include <stdio.h> 
 #include <cstring>   //strlen 
 #include <stdlib.h> 
-#include <errno.h> 
 #include <unistd.h>   //close 
 #include <arpa/inet.h>    //close 
 #include <sys/types.h> 
@@ -35,6 +34,7 @@
 #ifdef __linux__
 # include <wait.h>
 #endif
+static int running = true;
 //~~~~~~~~~~~~~~~~~~~~//
 /*• Le premier serveur pour un host:port sera le serveur par défaut pour cet host:port
 (ce qui signifie qu’il répondra à toutes les requêtes qui n’appartiennent pas à un
