@@ -64,7 +64,7 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
             } else {
                 int flag = 0;
                 buffer[r] = 0;
-                ofstream o; o.open(("www/logs/" + to_string(*it) + "_"+ to_string(time(NULL)) + to_string(rand()%10)).data());o << buffer; o.close();
+                // ofstream o; o.open(("www/logs/" + to_string(*it) + "_"+ to_string(time(NULL)) + to_string(rand()%10)).data());o << buffer; o.close();
                 for (size_t i = 0; i < w->requests.size(); i++) {
                     if (*it == w->requests[i].sd) {
                         flag = 1;

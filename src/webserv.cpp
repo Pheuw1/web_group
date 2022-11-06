@@ -93,18 +93,15 @@ Server *WebServ::get_host(string host) {
 void WebServ::run() {
       while (running) {
             max_sd = 0; FD_ZERO(&readfds); FD_ZERO(&writefds);   
-            cout << "check" <<endl;
             for (IT it = servers.begin(); it  !=servers.end(); it++)
                   max_sd = max(it->check_ready(readfds, writefds), max_sd);
             
-            cout << "select" <<endl;
             if (select(max_sd + 1, &readfds ,&writefds , NULL , NULL) <0)
                   throw Socket::connect_except();
-            cout << "get" <<endl;
             
             for (std::vector<Server>::iterator it = servers.begin(); it  !=servers.end(); it++)//responses are set now
                   it->get_requests(readfds, writefds, this);
-            cout << "send" <<endl;
+
             for (Rep it = responses.begin(); it != responses.end(); it++){
                   if (FD_ISSET(it->req_cp.sd , &writefds)){
                         if (send(it->req_cp.sd, it->buffer.str().data(), it->buffer.str().size(), 0) <= 0)

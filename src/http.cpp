@@ -102,8 +102,9 @@ int GET(Request &req, Response &rep) {
 
 int DELETE(Request &req, Response &rep) {
     (void) rep;
-    if (remove((req.w.root + req.url).data()))
+    if (remove((req.url).data()))
         return(404);
+    rep.body << "<html>\n  <body>\n  <h1>" + req.url + " deleted.</h1>\n  </body>\n</html>";
     return (200);
 }
 
@@ -224,8 +225,8 @@ int autoindex(string url, Response &rep) {
         ref =  files[i] + (dir_exist(string(rep.w.root + "/"+ files[i]).data()) ? "/" : "");
         if (files[i] !=  "." && files[i]  != "..")
             ref = files[i] + (dir_exist(string(rep.w.root + "/"+ files[i]).data()) ? "/" : "");
-        rep.body << "<p> <a href=" + ref + (download ? " download="+files[i] : "") + ">" + files[i]  + (dir_exist(files[i].data()) ? "/" : "") + "</a> </p>\n";
-		rep.body << "</body>\n</html>\n";
+        rep.body << "<p> <a href=" + ref + (dir_exist(files[i].data()) ? "" : (download ? " download="+files[i] : "")) + ">" + files[i]  + (dir_exist(files[i].data()) ? "/" : "") + "</a> </p>\n";
 	}	
+    rep.body << "</body>\n</html>\n";
 	return (200);	
 }
