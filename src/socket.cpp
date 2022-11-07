@@ -47,7 +47,7 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
     for (IT it = c_sd.begin(); it != c_sd.end(); it++) {
         int r;
         if (FD_ISSET(*it , &readfds))  {  
-            if ((r = recv( *it , buffer, BUFF_SIZE - 4, 0)) <= 0)  {  
+            if ((r = recv( *it , buffer, BUFF_SIZE - 1, 0)) <= 0)  {  
                 //Somebody disconnected , get his details and print 
                 if (r < 0)
                     cerr << ("recv failed for socket :" + to_string(*it)) << endl;
@@ -68,17 +68,15 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                 for (size_t i = 0; i < w->requests.size(); i++) {
                     if (*it == w->requests[i].sd) {
                         flag = 1;
-                        w->requests[i].body = w->requests[i].body + string(buffer);
-                        cout << "buffer copied" << endl;
+                        w->requests[i].body.write(buffer, r);
                         string b = w->requests[i].bound;
-                        if (string(buffer).find(w->requests[i].bound) == string::npos) {
-                            cerr << "incompatible file format" << endl;
+                        if (w->requests[i].body.str().find(w->requests[i].bound) == string::npos) {
                             w->requests.erase(w->requests.begin() + i);i--;
                             break;
                         }
                         b.insert(w->requests[i].bound.size() - 1, "--");
                         b.insert(0, "-");//need to be in that order??
-                        if (w->requests[i].body.find(b) != string::npos) { //end 
+                        if (w->requests[i].body.str().find(b) != string::npos) { //end 
                                 std::cout << "gone" <<endl;
                                 w->responses.push_back(Response(w->requests[i]));
                                 w->requests.erase(w->requests.begin() + i);i--;
@@ -86,11 +84,9 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                     }
                 }
                 if (flag) continue;
-                cout << "normal" << endl;
                 Request tmp(buffer, w, *it, port);
                 vector<string> q = tmp.get_val("Content-Type");
                 if (q.size() && q[0] == "multipart/form-data") {
-                    std::cout << "start on " << *it <<endl;
                     tmp.bound = q[1].substr(q[1].find_first_of('=') + 1);// + "\r\n";
                     w->requests.push_back(tmp);
                 } else {

@@ -67,7 +67,7 @@ WebServ::WebServ(string config_path, char **env) {
                   if (server != server2) {
                         for (size_t i = 0; i < server->ports.size(); i++)
                               for (size_t j = 0; j < server2->ports.size(); j++)
-                                    if (server->ports[i] == server2->ports[i])
+                                    if (server->ports[i] == server2->ports[j])
                                           for (Names n = server->names.begin(); n != server->names.end(); n++)
                                                 for (Names n2 = server2->names.begin(); n2 != server2->names.end(); n2++)
                                                      if (*n == *n2)

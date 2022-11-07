@@ -6,12 +6,10 @@ using namespace std;
 class Socket {
 private:
     typedef vector<int>::iterator IT;
-    std::string     name;
-    vector<string>  methods;
     struct sockaddr_in address;
     char            buffer[BUFF_SIZE];
 public:
-    vector<int>     c_sd;// clients eventually
+    vector<int>     c_sd;
     int             master_socket;
     int             port;
     Socket(int port) ;

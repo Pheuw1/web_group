@@ -12,7 +12,7 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
         ret = 405;
     else if (w.Methods.find(req.method_name) == w.Methods.end())
         ret = 400;
-    else if (req.host->max_body_size && req.body.size() > (size_t)req.host->max_body_size)
+    else if (req.host->max_body_size && req.body.str().size() > (size_t)req.host->max_body_size)
         ret = 413;
     else
         ret = (w.Methods[req.method_name])(req_cp, *this);
@@ -46,7 +46,7 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
     if (elems.size() != 3) throw invalid_argument("invalid request");
     method_name = elems[0];url = elems[1];version = elems[2];
     header = file.substr(file.find("\r\n") + 1,file.find("\r\n\r\n"));
-    body = file.substr(file.find("\r\n\r\n"));
+    body << file.substr(file.find("\r\n\r\n"));
     host = w.get_host(get_val("Host")[0]);
     // cout << "host : " << host->names[0] << endl;
     if (url.find_last_of("/") == url.size() - 1) {
@@ -61,8 +61,6 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
     } else if (url.find(".html") != string::npos && url.find("/HTML") == string::npos) { 
             url = w.root + "/" + "HTML" + url;
     } else { url = w.root + url;}
-
-
 }
 
 vector<string> Request::get_val(string str,string key) {
@@ -115,17 +113,17 @@ int POST(Request &req, Response &rep) {
     string filename = "name";
     
     // cout << "body :\n" << req.body << endl; 
-    if (req.body.find_first_not_of("\r\n ") == string::npos)
-        {rep.body << req.body ;return 204;}
+    if (req.body.str().find_first_not_of("\r\n ") == string::npos)
+        {rep.body << req.body.str() ;return 204;}
     vector<string> content_type = req.get_val("Content-Type");
     vector<string> content_disp = req.get_val("Content-Disposition");
     if (content_type.size() > 1 && content_type[0] == "multipart/form-data") {
         bound = content_type[1];
         bound = "--" + bound.substr(bound.find_first_of('=') + 1);// + "\r\n";
-        vector<string> contents = split_str(req.body, bound);
+        vector<string> contents = split_str(req.body.str(), bound);
         for (size_t i = 0; i < contents.size(); i++) {
             if (contents[i].find_first_not_of(" \n\r") == string::npos) continue;
-            contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"),contents[i].find_last_of("\r\n"));
+            contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"), contents[i].find_last_of("\r\n"));
             vector<string> cd = req.get_val(contents[i], "Content-Disposition");
             vector<string> ct = req.get_val(contents[i], "Content-Type");
             if (cd.size()) {
@@ -140,8 +138,7 @@ int POST(Request &req, Response &rep) {
                 tmp = contents[i].find("Content-Type");
                 contents[i].erase(tmp, contents[i].find_first_of("\n",tmp));
             }
-            // cout <<"!~!!!\n" << contents[i] <<"!~!!!\n" << contents[i].find( bound ) << endl;
-            contents[i] = contents[i].substr(contents[i].find("\r\n") + 2);
+            contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"));
             contents[i] = contents[i].substr(0, contents[i].size() - ("\r\n\r\n" + bound + "--").size());
             filename = filename.substr(filename.find_first_not_of("\""),filename.find_last_of("\"") - 1);
             ofstream new_file((string(req.w.root + "/uploads/" + filename)).data(), ios::out | ios::binary);
@@ -152,12 +149,7 @@ int POST(Request &req, Response &rep) {
         }
     }
     GET(req, rep);
-    // (void)rep; 
-    // ofstream new_file;
-    // new_file.open((string(req.url)).data());
-    // if (new_file.fail())
-    //     return 401;
-    // new_file << req.body;
+
     return 201;
 }
 

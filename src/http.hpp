@@ -10,7 +10,7 @@ public:
     string method_name; 
     string url;
     string header;
-    string body;
+    stringstream body;
     Server *host;
     int     sd;
     string obuff;
@@ -26,13 +26,17 @@ public:
         method_name = req.method_name;
         url = req.url;
         header = req.header;
-        body = req.body;
+        body << req.body.str();
         host = req.host;
         sd = req.sd;
         port = req.port;
         bound = req.bound;
         return *this;
     }
+    Request (const Request &req): w(req.w) {
+        *this = req;
+    }
+
 };
 
 class Response{
@@ -47,7 +51,7 @@ public:
     stringstream body;   
     stringstream buffer;
     Response(const Request &req);
-    Response(const Response &rep): w(rep.w), req_cp((char *)rep.req_cp.obuff.data(), &rep.req_cp.w, (const int)rep.req_cp.sd, rep.req_cp.port) {
+    Response(const Response &rep): w(rep.w),req_cp(rep.req_cp) {
         version = rep.version;
         status = rep.status;
         description = rep.description;

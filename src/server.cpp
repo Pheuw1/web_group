@@ -38,10 +38,9 @@ Server::Server(vector<vector<string> > settings, vector<vector<string> > routes,
         cout << names[0];  
     for (size_t i = 1; i < names.size(); i++)
         cout  << ", " << names[i];
-    cout << "} ";  
+    cout << "} \n";  
     for (size_t i = 0; i < ports.size(); i++)
         sockets.push_back(Socket(ports[i]));
-    cout << "server :" << names[0] << " created" << endl;
 
 }
 
@@ -76,10 +75,9 @@ int Server::get_requests(fd_set &readfds, fd_set &writefds, WebServ *w) {
 
 
 Server::~Server() {
-        cout << "server :" << names[0] << " destroyed" << endl;
-        for (IT it = sockets.begin(); it != sockets.end(); it++)
-            for (size_t i = 0; i < it->c_sd.size(); i++)
-                close(it->c_sd[i]);            
+    for (IT it = sockets.begin(); it != sockets.end(); it++)
+        for (size_t i = 0; i < it->c_sd.size(); i++)
+            close(it->c_sd[i]);            
 }
 
 Server::Server(const Server &s) :
@@ -94,4 +92,4 @@ Server::Server(const Server &s) :
     route_methods (s.route_methods),
     dirs (s.dirs),
     names (s.names)
-{cout << "serv copy called " << endl;}
+{;}

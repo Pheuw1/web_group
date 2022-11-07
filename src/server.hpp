@@ -8,7 +8,6 @@ class Socket;
 class Server
 {
 private:
-    // int             c_max_size;
     vector<vector<string> > settings;
     //
 
