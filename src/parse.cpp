@@ -12,9 +12,7 @@ vector<string> split_str(string s, string delimiter) {
         pos_start = pos_end + delim_len;
         res.push_back (token);
     }
-
     res.push_back (s.substr (pos_start));
-;
     return res;
 }
 
@@ -69,7 +67,7 @@ vector<vector<string> > parse_routes(string &scope, WebServ &w) {
     vector<string> lines = split_set(scope, "\n");
     for (vector<string>::iterator it = lines.begin(); it != lines.end(); it++)
         if (it->size() > 0 && it->find_first_not_of("    ,:") != string::npos)
-            if ((tmp = split_set(*it, " :,")).size() >= 1)// >= 1
+            if ((tmp = split_set(*it, "	 :,")).size() >= 1)// >= 1
                 ret.push_back(tmp);
     return ret;
 }

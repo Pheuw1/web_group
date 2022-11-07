@@ -28,7 +28,8 @@ Server::Server(vector<vector<string> > settings, vector<vector<string> > routes,
     }
     if (find(params.begin(), params.end(), "server_name") != params.end())
         names.push_back("");
-    else if (!params.empty() ) throw invalid_argument("config doesn't have required declarations");
+    else if (!params.empty() ) 
+		throw invalid_argument("config doesn't have required declarations");
     
     for (size_t i = 0; i < routes.size(); i++) 
         route_methods.insert(make_pair(routes[i][0], vector<string>(routes[i].begin() + 1, routes[i].end())));

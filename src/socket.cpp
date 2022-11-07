@@ -34,8 +34,8 @@ void Socket::new_connection(fd_set &readfds, fd_set &writefds) {
         int addrlen = sizeof(address);
         int new_sd;
         if ((new_sd = accept(master_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) < 0)
-            throw connect_except();
-        cout << "New connection , socket fd is "<< new_sd  <<" , ip is : " << inet_ntoa(address.sin_addr)<< ", port : "<< ntohs(address.sin_port) << endl;
+            cerr <<  connect_except().what();
+        // cout << "New connection , socket fd is "<< new_sd  <<" , ip is : " << inet_ntoa(address.sin_addr)<< ", port : "<< ntohs(address.sin_port) << endl;
         if (new_sd > 0) {
             c_sd.push_back(new_sd);
             fcntl(new_sd, F_SETFL, O_NONBLOCK);
@@ -53,12 +53,12 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                     cerr << ("recv failed for socket :" + to_string(*it)) << endl;
                 int addrlen = sizeof(address);
                 getpeername(*it , (struct sockaddr*)&address , (socklen_t*)&addrlen);  
-                cout << "Host disconneasdcted , ip " <<  inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << " sd "<< *it << endl;  
+                // cout << "Host disconneasdcted , ip " <<  inet_ntoa(address.sin_addr) << " , port " << ntohs(address.sin_port) << " sd "<< *it << endl;  
                 if (*it > 0) 
                     close(*it);
                 for (size_t i = 0; i < w->requests.size(); i++) {
                     if (w->requests[i].sd == *it) 
-                        {cout << "YES " << w->requests[i].sd << endl;w->requests.erase(w->requests.begin() + i); i--;}}
+                        {w->requests.erase(w->requests.begin() + i); i--;}}
                 c_sd.erase(it);it--;
                 
             } else {

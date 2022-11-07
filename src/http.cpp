@@ -1,14 +1,25 @@
 #include "http.hpp"
 #include <algorithm>
+#include "parse.hpp"
+
 typedef std::map<std::string, std::vector<std::string> >::iterator M;
+
+int method_allowed_route(const Request &req) {
+    for (M i = req.host->route_methods.begin(); i!= req.host->route_methods.end() ; i++)
+		if (req.url.find(i->first) == 0)
+			for (size_t j = 0; j < i->second.size(); j++)
+				if (req.method_name == i->second[j])
+					return 1;
+	return 0;			
+}
+
 Response::Response(const Request &req): w(req.w),version(req.version), status(0), description(""),headers(""), body("") ,req_cp(req) {
     M m;
     int ret;
 
-    if (req.url.find("autoindex") != string::npos)
+	if (req.url.find("autoindex") != string::npos)
 		ret = autoindex(w.root + req.url.substr(0, req.url.find_last_of("/") + 1), *this);
-    else if (((m = req.host->route_methods.find(req.url))!= req.host->route_methods.end() 
-            && find(m->second.begin(), m->second.end(),req.method_name) == m->second.end()))
+    else if (!method_allowed_route(req))
         ret = 405;
     else if (w.Methods.find(req.method_name) == w.Methods.end())
         ret = 400;
@@ -21,8 +32,12 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
     if (ret >= 400) {//ERROR 
         ifstream file_stream;
         file_stream.open((w.root + "/" + req_cp.host->error_path + to_string(ret) + ".html").data());
-        if (file_stream.fail())
+        if (file_stream.fail()){
             file_stream.open((w.root + "/" + w.error_path + to_string(ret) + ".html").data());
+			if (file_stream.fail()) 
+				body << "<div>\n<h1>Error" + to_string(ret) + "</h1> \n<p><a href=\"/HTML/home.html\">HOME</a></p> \n </div> ";
+			
+		}
         string file((istreambuf_iterator<char>(file_stream)), istreambuf_iterator<char>());
         body << file;
         headers += "Content-length: " + to_string(body.str().size()) + "\n";
@@ -60,9 +75,11 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
                 url = w.root + "/" + i->second;
 		}
 		if (url == elems[1] && url == "/")
-            url = w.root + "/" + w.home;
-    } else { url = w.root + url;}
+            url = w.root + "/";
+    } else { url = w.root + "/" + url;}
+	replace(url, "//", "/");
 }
+
 
 vector<string> Request::get_val(string str,string key) {
     string content;
@@ -141,7 +158,7 @@ int POST(Request &req, Response &rep) {
             contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"));
             contents[i] = contents[i].substr(0, contents[i].size() - ("\r\n\r\n" + bound + "--").size());
             filename = filename.substr(filename.find_first_not_of("\""),filename.find_last_of("\"") - 1);
-            ofstream new_file((string(req.w.root + "/uploads/" + filename)).data(), ios::out | ios::binary);
+			ofstream new_file((string(req.w.root + "/uploads/" + filename)).data(), ios::out | ios::binary);
             if (new_file.fail() && cout <<"failed" <<endl)
                 return 401;
             new_file << contents[i];

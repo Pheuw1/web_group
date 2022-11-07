@@ -27,7 +27,7 @@ WebServ::WebServ(string config_path, char **env) {
             if (scope.size())
                   routes = parse_routes(scope[0], *this);
             for (size_t i = 0; i < routes.size(); i++) {
-                  routes[i][0] = root + "/" + routes[i][0];
+                  routes[i][0] = root + (routes[i][0].find_first_of("/") == 0 ? "" : "/") + routes[i][0];
                   if (!dir_exist(routes[i][0].data()) && access(routes[i][0].data(), R_OK) < 0)
                         throw invalid_argument("invalid route: " + routes[i][0]);
                   for (size_t j = 1; j < routes[i].size(); j++)
@@ -51,30 +51,13 @@ WebServ::WebServ(string config_path, char **env) {
                         throw invalid_argument("invalid path " + dirs[i][1] + " for dir: " + dirs[i][0]);
             }
             if (dirs.size())
-                  it->erase(it->find("dir"), it->find("]"));
+                  it->erase(it->find("dirs"), it->find("]"));
 
             servers.push_back(Server(parse_scope(*it, *this), routes, dirs, this));
             routes.clear();
             dirs.clear();
       }
       //checking servers
-      for (IT server = servers.begin(); server != servers.end(); server++) {
-            for (size_t i = 0; i < server->ports.size(); i++)
-                  for (size_t j = 0; j < server->ports.size(); j++)
-                        if (i != j && server->ports[i] == server->ports[j])
-                              throw invalid_argument("two ports match on same server");
-            for (IT server2 = servers.begin(); server2 != servers.end(); server2++) {
-                  if (server != server2) {
-                        for (size_t i = 0; i < server->ports.size(); i++)
-                              for (size_t j = 0; j < server2->ports.size(); j++)
-                                    if (server->ports[i] == server2->ports[j])
-                                          for (Names n = server->names.begin(); n != server->names.end(); n++)
-                                                for (Names n2 = server2->names.begin(); n2 != server2->names.end(); n2++)
-                                                     if (*n == *n2)
-                                                             throw invalid_argument("two servers with matching ports have the same name");
-                  }
-            }
-      }
 }
 
 Server *WebServ::get_host(string host) {
@@ -134,9 +117,9 @@ void WebServ::init(char **e) {
       running = true;
       Methods.insert(make_pair("GET",    &GET));
       Methods.insert(make_pair("POST",   &POST));
-      Methods.insert(make_pair("DELETE", &DELETE));
       cgi_exts.insert("php");
       cgi_exts.insert("py");
+      Methods.insert(make_pair("DELETE", &DELETE));
       HttpStatusCode.insert(make_pair(100 ,"Continue"));
       HttpStatusCode.insert(make_pair(101 ,"SwitchingProtocols"));
       HttpStatusCode.insert(make_pair(103 ,"EarlyHints"));
