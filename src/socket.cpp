@@ -77,16 +77,17 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                         b.insert(w->requests[i].bound.size() - 1, "--");
                         b.insert(0, "-");//need to be in that order??
                         if (w->requests[i].body.str().find(b) != string::npos) { //end 
-                                std::cout << "gone" <<endl;
-                                w->responses.push_back(Response(w->requests[i]));
+								w->responses.push_back(Response(w->requests[i]));
                                 w->requests.erase(w->requests.begin() + i);i--;
-                        } else {cout << "end not found " << endl;}
+						}
                     }
                 }
                 if (flag) continue;
                 Request tmp(buffer, w, *it, port);
                 vector<string> q = tmp.get_val("Content-Type");
-                if (q.size() && q[0] == "multipart/form-data") {
+                if (!tmp.host)
+					continue;
+				if (q.size() && q[0] == "multipart/form-data") {
                     tmp.bound = q[1].substr(q[1].find_first_of('=') + 1);// + "\r\n";
                     w->requests.push_back(tmp);
                 } else {

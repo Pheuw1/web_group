@@ -91,25 +91,35 @@ Server *WebServ::get_host(string host) {
 }
 
 void WebServ::run() {
-      while (running) {
-            max_sd = 0; FD_ZERO(&readfds); FD_ZERO(&writefds);   
-            for (IT it = servers.begin(); it  !=servers.end(); it++)
-                  max_sd = max(it->check_ready(readfds, writefds), max_sd);
-            
-            if (select(max_sd + 1, &readfds ,&writefds , NULL , NULL) <0)
-                  throw Socket::connect_except();
-            
-            for (std::vector<Server>::iterator it = servers.begin(); it  !=servers.end(); it++)//responses are set now
-                  it->get_requests(readfds, writefds, this);
-
-            for (Rep it = responses.begin(); it != responses.end(); it++){
-                  if (FD_ISSET(it->req_cp.sd , &writefds)){
-                        if (send(it->req_cp.sd, it->buffer.str().data(), it->buffer.str().size(), 0) <= 0)
-                              throw Socket::connect_except();
-                        responses.erase(it--);
-                  }
-            }
-      }
+	int s;
+	while (running) {
+		max_sd = 0; FD_ZERO(&readfds); FD_ZERO(&writefds);   
+		for (IT it = servers.begin(); it  !=servers.end(); it++)
+				max_sd = max(it->check_ready(readfds, writefds), max_sd);
+		
+		if (select(max_sd + 1, &readfds ,&writefds , NULL , NULL) <0)
+			{throw runtime_error("select interrupted\n");}
+		
+		for (std::vector<Server>::iterator it = servers.begin(); it  !=servers.end(); it++)//responses are set now
+				it->get_requests(readfds, writefds, this);
+	
+		for (Rep it = responses.begin(); it != responses.end(); it++){
+			if (FD_ISSET(it->req_cp.sd , &writefds)) {
+				if ((s = send(it->req_cp.sd, it->buffer.str().data(), it->buffer.str().size(), 0)) <= 0){
+					if (!s) 
+						cerr << "client on :" << it->req_cp.sd << " couldn't keep up";
+					else {
+					for (size_t i = 0; i < it->req_cp.host->sockets.size(); i++){
+						if (it->req_cp.host->sockets[i].port == it->req_cp.port){
+							for (vector<int>::iterator c = it->req_cp.host->sockets[i].c_sd.begin(); c < it->req_cp.host->sockets[i].c_sd.end(); c++){
+								if (*c == it->req_cp.sd){
+									close(*c);it->req_cp.host->sockets[i].c_sd.erase(c); i = it->req_cp.host->sockets.size(); break;}}}}}
+				}
+				if (s != 0)
+					responses.erase(it--);
+			}
+		}
+	}
 }
 
 /*this is sad and shameful*/

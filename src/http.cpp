@@ -29,7 +29,6 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
         buffer << headers << "\r\n";
         buffer << "\r\n" << body.str() << "\r\n";
     }
-    //body gets set by method
     headers += "Content-length: " + to_string(body.str().size()) + "\n";
     if (req.url.find("cookie")) 
         headers +=  "Set-Cookie: cookie=cookie\n";
@@ -42,24 +41,26 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
 Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd), obuff(buffer), port(port), bound(""){
     string file = string(buffer);
     vector<string> elems(split_set(file.substr(0,file.find("\r\n")), " "));
-    if (!get_val("Content-length").empty())//https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Transfer-Encoding
+    if (!get_val("Content-length").empty())
     if (elems.size() != 3) throw invalid_argument("invalid request");
     method_name = elems[0];url = elems[1];version = elems[2];
     header = file.substr(file.find("\r\n") + 1,file.find("\r\n\r\n"));
     body << file.substr(file.find("\r\n\r\n"));
     host = w.get_host(get_val("Host")[0]);
-    // cout << "host : " << host->names[0] << endl;
+	for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) 
+		if (url.find(i->first) != string::npos && dir_exist((w.root + "/" + i->second).data()))
+			url.replace(url.find(i->first), i->first.size() - 1, i->second);
     if (url.find_last_of("/") == url.size() - 1) {
         for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) {
-            if (i->first == url && i->second == "autoindex")
+            if (url.find(i->first) != string::npos && dir_exist((w.root + "/" + i->second).data()))
+				url = url.replace(url.find(i->first), sizeof(i->first) - 1, i->second);
+			else if (i->first == url && i->second == "autoindex")
                 url = i->first + i->second;
 			else if (i->first == url) 
                 url = w.root + "/" + i->second;
 		}
 		if (url == elems[1] && url == "/")
             url = w.root + "/" + w.home;
-    } else if (url.find(".html") != string::npos && url.find("/HTML") == string::npos) { 
-            url = w.root + "/" + "HTML" + url;
     } else { url = w.root + url;}
 }
 
@@ -112,7 +113,6 @@ int POST(Request &req, Response &rep) {
     string bound;
     string filename = "name";
     
-    // cout << "body :\n" << req.body << endl; 
     if (req.body.str().find_first_not_of("\r\n ") == string::npos)
         {rep.body << req.body.str() ;return 204;}
     vector<string> content_type = req.get_val("Content-Type");
@@ -149,7 +149,6 @@ int POST(Request &req, Response &rep) {
         }
     }
     GET(req, rep);
-
     return 201;
 }
 
