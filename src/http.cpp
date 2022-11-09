@@ -5,22 +5,24 @@
 typedef std::map<std::string, std::vector<std::string> >::iterator M;
 
 int method_allowed_route(const Request &req) {
-    for (M i = req.host->route_methods.begin(); i!= req.host->route_methods.end() ; i++)
-		if (req.url.find(i->first) == 0)
-			for (size_t j = 0; j < i->second.size(); j++)
+    for (M i = req.host->route_methods.begin(); i!= req.host->route_methods.end() ; i++) {\
+        string route = ((dir_exist(i->first.data()) && i->first.find_last_of("/") != i->first.size() - 1) ? i->first + "/": i->first);
+        string path = (req.url.find_last_of("/") != req.url.size() - 1 ? req.url.substr(0,req.url.find_last_of("/") + 1) : req.url);
+        if (req.url == route || path == route){
+			for (size_t j = 0; j < i->second.size(); j++){
 				if (req.method_name == i->second[j])
-					return 1;
+					return 1;}}
+    }
 	return 0;			
 }
 
 Response::Response(const Request &req): w(req.w),version(req.version), status(0), description(""),headers(""), body("") ,req_cp(req) {
     M m;
     int ret;
-
-	if (req.url.find("autoindex") != string::npos)
-		ret = autoindex(w.root + req.url.substr(0, req.url.find_last_of("/") + 1), *this);
-    else if (!method_allowed_route(req))
+    if (!method_allowed_route(req) && cout << req.method_name << " not allowed on " << req.url << endl)
         ret = 405;
+	else if (req.url.find("autoindex") == req.url.size() - string("autoindex").size())
+		ret = autoindex(req.url.substr(0, req.url.find_last_of("/")), *this);
     else if (w.Methods.find(req.method_name) == w.Methods.end())
         ret = 400;
     else if (req.host->max_body_size && req.body.str().size() > (size_t)req.host->max_body_size)
@@ -62,22 +64,21 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
     header = file.substr(file.find("\r\n") + 1,file.find("\r\n\r\n"));
     body << file.substr(file.find("\r\n\r\n"));
     host = w.get_host(get_val("Host")[0]);
-	for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) 
-		if (url.find(i->first) != string::npos && dir_exist((w.root + "/" + i->second).data()))
-			url.replace(url.find(i->first), i->first.size() - 1, i->second);
-    if (url.find_last_of("/") == url.size() - 1) {
-        for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) {
-            if (url.find(i->first) != string::npos && dir_exist((w.root + "/" + i->second).data()))
-				url = url.replace(url.find(i->first), sizeof(i->first) - 1, i->second);
-			else if (i->first == url && i->second == "autoindex")
+    cout << "url :" << url << endl;
+    url = ((dir_exist(url.data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
+    for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) {
+        string tmp =  ((dir_exist(i->first.data()) && url.find_last_of("/") != i->first.size() - 1) ? i->first + "/": i->first);
+        if ((i->second == "autoindex")) {
+            if (url == tmp)
                 url = i->first + i->second;
-			else if (i->first == url) 
-                url = w.root + "/" + i->second;
-		}
-		if (url == elems[1] && url == "/")
-            url = w.root + "/";
-    } else { url = w.root + "/" + url;}
-	replace(url, "//", "/");
+        } else if (url.find(i->first) == 0) 
+            url = url.replace(url.find(i->first), url.find(i->first) + i->first.size() - 1, i->second);
+    }
+	url = w.root + "/" + url;
+    replace(url, "//", "/");
+    replace(url, "//", "/");
+    url = ((dir_exist(url.data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
+    cout << "url after routing:" << url << endl;
 }
 
 
@@ -108,8 +109,10 @@ int GET(Request &req, Response &rep) {
         return CGI(req, rep);
     ifstream file_stream;
     file_stream.open(req.url.data());
-    if (dir_exist(req.url.data()) || file_stream.fail()) 
+    if (file_stream.fail()) 
         return(404);
+    if (dir_exist(req.url.data()))
+        return(403);
     std::string file((istreambuf_iterator<char>(file_stream)), istreambuf_iterator<char>());
     rep.body << file;//check if css file and insert in header
     return (200);
