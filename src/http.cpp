@@ -75,9 +75,9 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
             if (i->second.find_last_of("/") == i->second.size() - 1)
                 l++;
             if (i->second.find_first_of("/") == 0)
-                url = url.replace(url.find(i->first), url.find(i->first) + i->second.size() - l, i->second);
+                url = url.replace(url.find(tmp), url.find(tmp) + i->second.size() - l - 1, i->second);
             else
-                url = url.replace(url.find(i->first), url.find(i->first) + i->second.size() - l, i->second);
+                url = url.replace(url.find(tmp), url.find(tmp) + i->second.size() - l, i->second);
         }
     }
 	url = w.root + "/" + url;
