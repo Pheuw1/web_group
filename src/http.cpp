@@ -29,7 +29,6 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
         ret = 413;
     else
         ret = (w.Methods[req.method_name])(req_cp, *this);
-
     buffer << req.version << " " << ret << " " << w.HttpStatusCode[ret] << "\r\n";
     if (ret >= 400) {//ERROR 
         ifstream file_stream;
@@ -71,8 +70,15 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
         if ((i->second == "autoindex")) {
             if (url == tmp)
                 url = i->first + i->second;
-        } else if (url.find(i->first) == 0) 
-            url = url.replace(url.find(i->first), url.find(i->first) + i->first.size() - 1, i->second);
+        } else if (url.find(i->first) == 0) {
+            int l = 1;
+            if (i->second.find_last_of("/") == i->second.size() - 1)
+                l++;
+            if (i->second.find_first_of("/") == 0)
+                url = url.replace(url.find(i->first), url.find(i->first) + i->second.size() - l, i->second);
+            else
+                url = url.replace(url.find(i->first), url.find(i->first) + i->second.size() - l, i->second);
+        }
     }
 	url = w.root + "/" + url;
     replace(url, "//", "/");
