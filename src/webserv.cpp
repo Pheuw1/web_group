@@ -46,7 +46,7 @@ WebServ::WebServ(string config_path, char **env) {
 
                   if (dirs[i].size() != 2)
                         throw invalid_argument("declaration of dir component requires one argument");
-                  if (!dir_exist((root + "/"+ dirs[i][0]).data()))
+                  if (!dir_exist((root + "/"+ dirs[i][0]).data()) && access((root + "/"+  dirs[i][0]).data(), R_OK) < 0)
                         throw invalid_argument("invalid dir: " + dirs[i][0]);
                   if (access((root + "/"+  dirs[i][1]).data(), R_OK) < 0 && dirs[i][1] != "autoindex")
                         throw invalid_argument("invalid path " + dirs[i][1] + " for dir: " + dirs[i][0]);
