@@ -66,23 +66,23 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
     cout << "url :" << url << endl;
     url = ((dir_exist(url.data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
     for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) {
-        string tmp =  ((dir_exist(i->first.data()) && url.find_last_of("/") != i->first.size() - 1) ? i->first + "/": i->first);
+        string tmp =  ((dir_exist(i->first.data()) && i->first.find_last_of("/") != i->first.size() - 1) ? i->first + "/": i->first);
+        i->second = ((dir_exist(i->second.data()) && i->second.find_last_of("/") != i->second.size() - 1) ? i->second + "/": i->second);
         clean_dup(i->second, '/');
-            cout << (w.root + "/"+  i->second) << endl;
         if ((i->second == "autoindex")) {
             if (url == tmp)
                 url = i->first + i->second;
         } else if (access((w.root + "/"+  i->second).data(), R_OK) >= 0 && !dir_exist((w.root + "/"+  i->second).data())) {
             if (url == tmp)
-                url = url.replace(url.find(tmp), url.find(tmp) + tmp.size(), i->second);
+                url = url.replace(url.find(tmp), url.find(tmp) + tmp.size(), "/" + i->second + "/");
         } else if (url.find(tmp) == 0) {
             clean_dup(i->second, '/');
-            url = url.replace(url.find(tmp), url.find(tmp) + tmp.size(), i->second);
+            url = url.replace(url.find(tmp), url.find(tmp) + tmp.size(), "/" + i->second + "/");
         }
     }
 	url = w.root + "/" + url;
-    clean_dup(url, '/');
     url = ((dir_exist(url.data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
+    clean_dup(url, '/');
     cout << "url after routing:" << url << endl;
 }
 
