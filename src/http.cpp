@@ -242,7 +242,7 @@ int autoindex(string url, Response &rep) {
     } else {return 404;}
 	rep.body << "<!doctype html>\n<html>\n<head>\n<title>";
 	rep.body <<	url + "</title>\n" + url + "</head>\n<body>\n";
-    int download = (url == "www/uploads/");
+    int download = (url.find("www/uploads") != string::npos);
 	for (size_t i = 0; i < files.size(); i++) {
         string ref;
         ref =  files[i] + (dir_exist(string(rep.w.root + "/"+ files[i]).data()) ? "/" : "");

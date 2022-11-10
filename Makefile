@@ -15,7 +15,6 @@ $(NAME):		$(OBJS)
 
 clean:
 				$(RM) $(OBJS)
-				$(RM) www/logs/* www/uploads/*
 
 fclean:			clean
 				$(RM) $(NAME)
