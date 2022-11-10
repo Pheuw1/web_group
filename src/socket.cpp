@@ -72,14 +72,18 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                         string b = w->requests[i].bound;
                         if (w->requests[i].body.str().find(w->requests[i].bound) == string::npos) {
                             w->requests.erase(w->requests.begin() + i);i--;
+                            cout << "request thrown" << endl;
                             break;
                         }
-                        b.insert(w->requests[i].bound.size() - 1, "--");
+                        b.insert(w->requests[i].bound.size(), "--");
                         b.insert(0, "-");//need to be in that order??
                         if (w->requests[i].body.str().find(b) != string::npos) { //end 
-								w->responses.push_back(Response(w->requests[i]));
-                                w->requests.erase(w->requests.begin() + i);i--;
-						}
+                            cout << "req finished" << endl;
+                            w->responses.push_back(Response(w->requests[i]));
+                            w->requests.erase(w->requests.begin() + i);i--;
+                        
+                        }
+                        cout << "waiting for next" << endl;
                     }
                 }
                 if (flag) continue;
@@ -87,8 +91,9 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                 vector<string> q = tmp.get_val("Content-Type");
                 if (!tmp.host)
 					continue;
-				if (q.size() && q[0] == "multipart/form-data") {
+            if (q.size() && q[0] == "multipart/form-data") {
                     tmp.bound = q[1].substr(q[1].find_first_of('=') + 1);// + "\r\n";
+                    cout << tmp.header <<endl;
                     w->requests.push_back(tmp);
                 } else {
                     w->responses.push_back(Response(tmp));

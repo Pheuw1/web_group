@@ -63,15 +63,21 @@ WebServ::WebServ(string config_path, char **env) {
 }
 
 Server *WebServ::get_host(string host) {
-      vector<string> tmp= split_set(host,":");
-      string name = tmp[0]; int port = atoi(tmp[1].data());
-      if (name == "localhost") name = "";
-      for (IT it = servers.begin(); it  !=servers.end(); it++)
-            for (Server::IT s = it->sockets.begin(); s !=  it->sockets.end();s++)
-                  if (s->port == port)
-                        for (Names names = it->names.begin(); names != it->names.end(); names++)
-                              if (name == "" || name == *names)
-                                    return (&(*it));
+      vector<string> tmp = split_set(host,":\r");
+      int port = 0;
+      string name = "";
+      if (tmp.size() > 1)
+           {port = atoi(tmp[1].data()); name = tmp[0]; }
+      else {name = host; port = 0;}
+      if (name == "localhost")
+            name = "";
+      for (IT it = servers.begin(); it  !=servers.end(); it++){
+            for (Server::IT s = it->sockets.begin(); s !=  it->sockets.end();s++){
+                  if (!port || s->port == port){
+                        for (Names names = it->names.begin(); names != it->names.end(); names++){
+                              if ((name == "" || name == *names)){
+                                    return (&(*it));}}}}}
+      
       return (NULL);
 }
 
@@ -85,7 +91,7 @@ void WebServ::run() {
 		if (select(max_sd + 1, &readfds ,&writefds , NULL , NULL) <0)
 			{throw runtime_error("select interrupted\n");}
 		
-		for (std::vector<Server>::iterator it = servers.begin(); it  !=servers.end(); it++)//responses are set now
+		for (std::vector<Server>::iterator it = servers.begin(); it  !=servers.end(); it++)
 				it->get_requests(readfds, writefds, this);
 	
 		for (Rep it = responses.begin(); it != responses.end(); it++){
@@ -111,7 +117,6 @@ void WebServ::run() {
 void WebServ::init(char **e) {
       char tmp[2048];
       cwd = string(getcwd(tmp, 2048));
-      cout << cwd << endl;
       env = (char * const *)e;     
       root = "www"; 
       home = "HTML/home.html";
@@ -119,9 +124,9 @@ void WebServ::init(char **e) {
       running = true;
       Methods.insert(make_pair("GET",    &GET));
       Methods.insert(make_pair("POST",   &POST));
+      Methods.insert(make_pair("DELETE", &DELETE));
       cgi_exts.insert("php");
       cgi_exts.insert("py");
-      Methods.insert(make_pair("DELETE", &DELETE));
       HttpStatusCode.insert(make_pair(100 ,"Continue"));
       HttpStatusCode.insert(make_pair(101 ,"SwitchingProtocols"));
       HttpStatusCode.insert(make_pair(103 ,"EarlyHints"));

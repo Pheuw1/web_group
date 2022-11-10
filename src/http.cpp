@@ -21,12 +21,12 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
     int ret;
     if (!method_allowed_route(req) && cout << req.method_name << " not allowed on " << req.url << endl)
         ret = 405;
-	else if (req.url.find("autoindex") == req.url.size() - string("autoindex").size())
+	else if (req.method_name == "GET" && req.url.find("autoindex") == req.url.size() - string("autoindex").size())
 		ret = autoindex(req.url.substr(0, req.url.find_last_of("/")), *this);
-    else if (w.Methods.find(req.method_name) == w.Methods.end())
-        ret = 400;
     else if (req.host->max_body_size && req.body.str().size() > (size_t)req.host->max_body_size)
         ret = 413;
+    else if (w.Methods.find(req.method_name) == w.Methods.end())
+        ret = 400;
     else
         ret = (w.Methods[req.method_name])(req_cp, *this);
     buffer << req.version << " " << ret << " " << w.HttpStatusCode[ret] << "\r\n";
@@ -54,7 +54,8 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
     buffer << "\r\n" << body.str() << "\r\n";
 }
 
-Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd), obuff(buffer), port(port), bound(""){
+Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd), port(port), bound(""){
+    obuff = buffer;
     string file = string(buffer);
     vector<string> elems(split_set(file.substr(0,file.find("\r\n")), " "));
     if (!get_val("Content-length").empty())
@@ -63,17 +64,17 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
     header = file.substr(file.find("\r\n") + 1,file.find("\r\n\r\n"));
     body << file.substr(file.find("\r\n\r\n"));
     host = w.get_host(get_val("Host")[0]);
-    
     url = ((dir_exist((w.root + "/" + url).data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
-    cout << "url :" << url << endl;
+    if (host){
     for (map<string, string>::iterator i = host->dirs.begin(); i != host->dirs.end(); i++) {
         string tmp =  ((dir_exist((w.root + "/" + i->first).data()) && i->first.find_last_of("/") != i->first.size() - 1) ? "/" + i->first + "/": "/" + i->first);
         if (i->second != "autoindex")
             i->second = ((dir_exist((w.root + "/" + i->second).data()) && i->second.find_last_of("/") != i->second.size() - 1) ? "/" + i->second + "/": "/" + i->second);
         clean_dup(tmp, '/');
         clean_dup(i->second, '/');
+
         if ((i->second == "autoindex")) {
-            if (url == tmp)
+            if (url == tmp && method_name == "GET")
                 url = url + "/" + i->second;
         } else if (access((w.root + "/"+  i->second).data(), R_OK) >= 0 && !dir_exist((w.root + "/"+  i->second).data())) {
             if (url == tmp)
@@ -82,13 +83,14 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
             clean_dup(i->second, '/');
             url = url.replace(url.find(tmp), url.find(tmp) + tmp.size(), "/" + i->second);
         }
-    }
+    }}
 	url = w.root + "/" + url;
     clean_dup(url, '/');
     url = ((dir_exist(url.data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
     cout << "url after routing:" << url << endl;
-}
 
+}
+ 
 
 vector<string> Request::get_val(string str,string key) {
     string content;
@@ -96,7 +98,7 @@ vector<string> Request::get_val(string str,string key) {
     if (start != string::npos)
         start = str.find_first_of(":", start);
     if (str.find_first_not_of(": ", start) != string::npos && str.find_first_of("\n", start) != string::npos)
-        content = str.substr(str.find_first_not_of(": ", start)  ,str.find_first_of("\n",start) - str.find_first_not_of(": ", start));
+        content = str.substr(str.find_first_not_of(": ", start)  ,str.find_first_of("\r\n",start) - str.find_first_not_of(": ", start));
     return split_set(content, ";");
 }
 vector<string> Request::get_val(string key) {
@@ -105,7 +107,7 @@ vector<string> Request::get_val(string key) {
     if (start != string::npos)
         start = header.find_first_of(":", start);
     if (header.find_first_not_of(": ", start) != string::npos && header.find_first_of("\n", start) != string::npos)
-        content = header.substr(header.find_first_not_of(": ", start)  ,header.find_first_of("\n",start) - header.find_first_not_of(": ", start));
+        content = header.substr(header.find_first_not_of(": ", start)  ,header.find_first_of("\r\n",start) - header.find_first_not_of(": ", start));
     return split_set(content, ";");
 }
 
@@ -129,6 +131,8 @@ int GET(Request &req, Response &rep) {
 
 int DELETE(Request &req, Response &rep) {
     (void) rep;
+    if (dir_exist((req.url).data()))
+        return (405);
     if (remove((req.url).data()))
         return(404);
     rep.body << "<html>\n  <body>\n  <h1>" + req.url + " deleted.</h1>\n  </body>\n</html>";

@@ -56,7 +56,6 @@ vector<string> parse_config(string conf_path) {
     size_t i;
     while ((i = file.find("#")) != string::npos)
             file.erase(i, file.find_first_of("\n", i) - i);
-    cout << file << endl;
     return get_all_scopes(file, "server", "{", "}");
 }
 
