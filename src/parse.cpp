@@ -125,3 +125,17 @@ bool replace(std::string& str, const std::string& from, const std::string& to) {
     str.replace(start_pos, from.length(), to);
     return true;
 }
+
+void clean_dup(string &str, char c) {
+    size_t len = 0;
+    for (size_t i = 0; i != string::npos;i++) {
+        i = str.find_first_of(c, i);
+        if (i == string::npos)
+            break;
+        len = 0;
+        while (str[i + len] == c)
+            len++;
+        if (len > 1)
+            str.erase(i + 1, len - 1);
+    }
+}

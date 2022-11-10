@@ -19,3 +19,4 @@ vector<vector<string> > parse_routes(string &scope, WebServ &);
 vector<string> get_all_scopes(string file, string directive, string open, string close);
 bool dir_exist(const char *s);
 bool replace(std::string& str, const std::string& from, const std::string& to);
+void clean_dup(string &str, char c);

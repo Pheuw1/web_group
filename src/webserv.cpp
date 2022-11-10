@@ -42,13 +42,15 @@ WebServ::WebServ(string config_path, char **env) {
             if (scope.size())
                   dirs = parse_routes(scope[0], *this);
             for (size_t i = 0; i < dirs.size(); i++) {
-                //   cout << dirs[i].size() <<  ":"<< dirs[i][0] << endl;
+                  //   cout << dirs[i].size() <<  ":"<< dirs[i][0] << endl;
+
                   if (dirs[i].size() != 2)
                         throw invalid_argument("declaration of dir component requires one argument");
                   if (!dir_exist((root + "/"+ dirs[i][0]).data()))
                         throw invalid_argument("invalid dir: " + dirs[i][0]);
                   if (access((root + "/"+  dirs[i][1]).data(), R_OK) < 0 && dirs[i][1] != "autoindex")
                         throw invalid_argument("invalid path " + dirs[i][1] + " for dir: " + dirs[i][0]);
+                  clean_dup(dirs[i][0],'/');clean_dup(dirs[i][1],'/');
             }
             if (dirs.size())
                   it->erase(it->find("dirs"), it->find("]"));
