@@ -47,14 +47,16 @@ vector<string> get_all_scopes(string file, string directive, string open, string
 }
 
 vector<string> parse_config(string conf_path) {
-    string params[] = {"listen" ,"server_name" ,"errors" ,"max_body_size","methods" ,"cgi"};
     ifstream file_stream;
     file_stream.open(conf_path.data());
     if (!file_stream)
         throw invalid_argument("config file doesnt exist\n");
     std::string file((istreambuf_iterator<char>(file_stream)), istreambuf_iterator<char>());
     file_stream.close();
-    
+    size_t i;
+    while ((i = file.find("#")) != string::npos)
+            file.erase(i, file.find_first_of("\n", i) - i);
+    cout << file << endl;
     return get_all_scopes(file, "server", "{", "}");
 }
 
