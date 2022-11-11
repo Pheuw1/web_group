@@ -173,7 +173,7 @@ int POST(Request &req, Response &rep) {
 
             contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"));
             contents[i] = contents[i].substr(0, contents[i].find("--"  + req.bound + "--"));
-            contents[i] = contents[i].substr(0, contents[i].size() - 3);
+            contents[i] = contents[i].substr(0, contents[i].size() - 2);
             filename = filename.substr(filename.find_first_not_of("\""),filename.find_last_of("\"") - 1);
 			ofstream new_file((string(req.w.root + "/uploads/" + filename)).data(), ios::out | ios::binary);
             if (new_file.fail())
