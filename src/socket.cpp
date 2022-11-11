@@ -75,15 +75,16 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                             cout << "request thrown" << endl;
                             break;
                         }
+                        // ------WebKitFormBoundaryAEzXNiTE5CMKVPNI--
                         b.insert(w->requests[i].bound.size(), "--");
-                        b.insert(0, "-");//need to be in that order??
+                        b.insert(0, "--");//need to be in that order??
+                        cout << b << endl;
                         if (w->requests[i].body.str().find(b) != string::npos) { //end 
                             cout << "req finished" << endl;
                             w->responses.push_back(Response(w->requests[i]));
                             w->requests.erase(w->requests.begin() + i);i--;
                         
                         }
-                        cout << "waiting for next" << endl;
                     }
                 }
                 if (flag) continue;

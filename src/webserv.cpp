@@ -60,6 +60,23 @@ WebServ::WebServ(string config_path, char **env) {
             dirs.clear();
       }
       //checking servers
+      for (IT server = servers.begin(); server != servers.end(); server++) {
+            for (size_t i = 0; i < server->ports.size(); i++)
+                  for (size_t j = 0; j < server->ports.size(); j++)
+                        if (i != j && server->ports[i] == server->ports[j])
+                              throw invalid_argument("two ports match on same server");
+            for (IT server2 = servers.begin(); server2 != servers.end(); server2++) {
+                  if (server != server2) {
+                        for (Names n = server->names.begin(); n != server->names.end(); n++)
+                              for (Names n2 = server2->names.begin(); n2 != server2->names.end(); n2++)
+                                    if (*n == *n2)
+                                          for (size_t i = 0; i < server->ports.size(); i++)
+                                                for (size_t j = 0; j < server2->ports.size(); j++)
+                                                      if (server->ports[i] == server2->ports[j])
+                                                            throw invalid_argument("two servers with matching ports have the same name");
+                  }
+            }
+      }
 }
 
 Server *WebServ::get_host(string host) {

@@ -19,6 +19,7 @@ int method_allowed_route(const Request &req) {
 Response::Response(const Request &req): w(req.w),version(req.version), status(0), description(""),headers(""), body("") ,req_cp(req) {
     M m;
     int ret;
+    // cout << req.body.str()<<endl;
     if (!method_allowed_route(req) && cout << req.method_name << " not allowed on " << req.url << endl)
         ret = 405;
 	else if (req.method_name == "GET" && req.url.find("autoindex") == req.url.size() - string("autoindex").size())
@@ -87,7 +88,7 @@ Request::Request(char *buffer, WebServ *web, int sd, int port): w(*web), sd(sd),
 	url = w.root + "/" + url;
     clean_dup(url, '/');
     url = ((dir_exist(url.data()) && url.find_last_of("/") != url.size() - 1) ? url + "/": url);
-    cout << "url after routing:" << url << endl;
+    // cout << "url after routing:" << url << endl;
 
 }
  
@@ -144,17 +145,16 @@ int POST(Request &req, Response &rep) {
     size_t tmp;
     string bound;
     string filename = "name";
-    
     if (req.body.str().find_first_not_of("\r\n ") == string::npos)
         {rep.body << req.body.str() ;return 204;}
     vector<string> content_type = req.get_val("Content-Type");
     vector<string> content_disp = req.get_val("Content-Disposition");
-    if (content_type.size() > 1 && content_type[0] == "multipart/form-data") {
+    if (content_type.size() > 1 && content_type[0].find("multipart/form-data") != string::npos) {
         bound = content_type[1];
         bound = "--" + bound.substr(bound.find_first_of('=') + 1);// + "\r\n";
         vector<string> contents = split_str(req.body.str(), bound);
         for (size_t i = 0; i < contents.size(); i++) {
-            if (contents[i].find_first_not_of(" \n\r") == string::npos) continue;
+            if (contents[i].find_first_not_of(" \n\r-") == string::npos) continue;
             contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"), contents[i].find_last_of("\r\n"));
             vector<string> cd = req.get_val(contents[i], "Content-Disposition");
             vector<string> ct = req.get_val(contents[i], "Content-Type");
@@ -170,13 +170,15 @@ int POST(Request &req, Response &rep) {
                 tmp = contents[i].find("Content-Type");
                 contents[i].erase(tmp, contents[i].find_first_of("\n",tmp));
             }
+
             contents[i] = contents[i].substr(contents[i].find_first_not_of("\r\n"));
-            contents[i] = contents[i].substr(0, contents[i].size() - ("\r\n\r\n" + bound + "--").size());
+            contents[i] = contents[i].substr(0, contents[i].find("--"  + req.bound + "--"));
+            contents[i] = contents[i].substr(0, contents[i].size() - 3);
             filename = filename.substr(filename.find_first_not_of("\""),filename.find_last_of("\"") - 1);
 			ofstream new_file((string(req.w.root + "/uploads/" + filename)).data(), ios::out | ios::binary);
-            if (new_file.fail() && cout <<"failed" <<endl)
+            if (new_file.fail())
                 return 401;
-            new_file << contents[i];
+            new_file << (contents[i]);
             new_file.close();
         }
     }
