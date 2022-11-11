@@ -42,11 +42,11 @@ Response::Response(const Request &req): w(req.w),version(req.version), status(0)
 		}
         string file((istreambuf_iterator<char>(file_stream)), istreambuf_iterator<char>());
         body << file;
-        headers += "Content-length: " + to_string(body.str().size()) + "\n";
+        headers += "Content-length: " + to_string(body.str().size() + 2) + "\n";
         buffer << headers << "\r\n";
         buffer << "\r\n" << body.str() << "\r\n";
     }
-    headers += "Content-length: " + to_string(body.str().size()) + "\n";
+    headers += "Content-length: " + to_string(body.str().size() + 2) + "\n";
     if (req.url.find("cookie")) 
         headers +=  "Set-Cookie: cookie=cookie\n";
     // if (req.header.find("Cookie: ")) 
@@ -243,7 +243,7 @@ int autoindex(string url, Response &rep) {
         closedir (dir);
     } else {return 404;}
 	rep.body << "<!doctype html>\n<html>\n<head>\n<title>";
-	rep.body <<	url + "</title>\n" + url + "</head>\n<body>\n";
+	rep.body <<	url + "</title>\n</head>\n<body>\n";
     int download = (url.find("www/uploads") != string::npos);
 	for (size_t i = 0; i < files.size(); i++) {
         string ref;

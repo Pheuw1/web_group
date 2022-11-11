@@ -78,7 +78,6 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
                         // ------WebKitFormBoundaryAEzXNiTE5CMKVPNI--
                         b.insert(w->requests[i].bound.size(), "--");
                         b.insert(0, "--");//need to be in that order??
-                        cout << b << endl;
                         if (w->requests[i].body.str().find(b) != string::npos) { //end 
                             cout << "req finished" << endl;
                             w->responses.push_back(Response(w->requests[i]));
@@ -94,7 +93,6 @@ int Socket::messages(fd_set &readfds, WebServ *w) {
 					continue;
             if (q.size() && q[0] == "multipart/form-data") {
                     tmp.bound = q[1].substr(q[1].find_first_of('=') + 1);// + "\r\n";
-                    cout << tmp.header <<endl;
                     w->requests.push_back(tmp);
                 } else {
                     w->responses.push_back(Response(tmp));

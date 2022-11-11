@@ -42,7 +42,7 @@ WebServ::WebServ(string config_path, char **env) {
             if (scope.size())
                   dirs = parse_routes(scope[0], *this);
             for (size_t i = 0; i < dirs.size(); i++) {
-                  //   cout << dirs[i].size() <<  ":"<< dirs[i][0] << endl;
+                  //   << dirs[i].size() <<  ":"<< dirs[i][0] << endl;
 
                   if (dirs[i].size() != 2)
                         throw invalid_argument("declaration of dir component requires one argument");
